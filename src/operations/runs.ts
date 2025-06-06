@@ -24,7 +24,10 @@ export const GetRunSchema = z.object({
 
 export const getRuns = pipe(
   apply(client.runs.getRuns.bind(client.runs)),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
-export const getRun = pipe(client.runs.getRun.bind(client.runs), toResult);
+export const getRun = pipe(
+  client.runs.getRun.bind(client.runs), 
+  (promise: any) => toResult(promise)
+);

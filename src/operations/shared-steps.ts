@@ -66,20 +66,20 @@ export const UpdateSharedStepSchema = z
 
 export const getSharedSteps = pipe(
   client.sharedSteps.getSharedSteps.bind(client.sharedSteps),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 export const getSharedStep = pipe(
   client.sharedSteps.getSharedStep.bind(client.sharedSteps),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 export const createSharedStep = pipe(
   client.sharedSteps.createSharedStep.bind(client.sharedSteps),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 export const updateSharedStep = pipe(
   client.sharedSteps.updateSharedStep.bind(client.sharedSteps),
-  toResult,
+  (promise: any) => toResult(promise),
 );

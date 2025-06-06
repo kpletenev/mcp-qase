@@ -143,14 +143,17 @@ export const CreateCaseBulkSchema = z.object({
 
 export const getCases = pipe(
   apply(client.cases.getCases.bind(client.cases)),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
-export const getCase = pipe(client.cases.getCase.bind(client.cases), toResult);
+export const getCase = pipe(
+  client.cases.getCase.bind(client.cases), 
+  (promise: any) => toResult(promise)
+);
 
 export const createCase = pipe(
   client.cases.createCase.bind(client.cases),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 const convertCaseData = (
@@ -175,5 +178,5 @@ export const updateCase = pipe(
     id: number,
     data: Omit<z.infer<typeof UpdateCaseSchema>, 'code' | 'id'>,
   ) => client.cases.updateCase(code, id, convertCaseData(data)),
-  toResult,
+  (promise: any) => toResult(promise),
 );
