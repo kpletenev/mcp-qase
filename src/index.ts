@@ -86,6 +86,12 @@ import {
   createSharedStep,
   updateSharedStep,
 } from './operations/shared-steps.js';
+import {
+  LinkTestCaseToJiraSchema,
+  GetTestCasesLinkedToJiraSchema,
+  linkTestCaseToJira,
+  getTestCasesLinkedToJira,
+} from './operations/jira-links.js';
 import { match } from 'ts-pattern';
 import { errAsync } from 'neverthrow';
 
@@ -257,6 +263,16 @@ server.setRequestHandler(ListToolsRequestSchema, () => ({
       description: 'Update an existing shared step',
       inputSchema: zodToJsonSchema(UpdateSharedStepSchema),
     },
+    {
+      name: 'link_test_case_to_jira',
+      description: 'Link a test case to a Jira issue',
+      inputSchema: zodToJsonSchema(LinkTestCaseToJiraSchema),
+    },
+    {
+      name: 'get_test_cases_linked_to_jira',
+      description: 'Get test cases linked to a specific Jira issue',
+      inputSchema: zodToJsonSchema(GetTestCasesLinkedToJiraSchema),
+    },
   ],
 }));
 
@@ -265,7 +281,7 @@ server.setRequestHandler(ListToolsRequestSchema, () => ({
  * Creates a new note with the provided title and content, and returns success message.
  */
 server.setRequestHandler(CallToolRequestSchema, (request) =>
-  match(request.params)
+  match(request.params as { name: string; arguments: unknown })
     .with({ name: 'list_projects' }, ({ arguments: args }) => {
       const { limit, offset } = ListProjectsSchema.parse(args);
       return listProjects(limit, offset);
@@ -433,14 +449,28 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
       const { code, hash, stepData } = UpdateSharedStepSchema.parse(args);
       return updateSharedStep(code, hash, stepData);
     })
+    .with({ name: 'link_test_case_to_jira' }, ({ arguments: args }) => {
+      const { code, caseId, jiraIssueKey, jiraType } = LinkTestCaseToJiraSchema.parse(args);
+      return linkTestCaseToJira(code, caseId, jiraIssueKey, jiraType);
+    })
+    .with({ name: 'get_test_cases_linked_to_jira' }, ({ arguments: args }) => {
+      const { code, jiraIssueKey, jiraType, limit, offset } = GetTestCasesLinkedToJiraSchema.parse(args);
+      return getTestCasesLinkedToJira(code, jiraIssueKey, jiraType, limit, offset);
+    })
     .otherwise(() => errAsync('Unknown tool'))
-    .map((response) => response.data.result)
-    .map((data) => ({
+    .map((response: any) => {
+      // Handle both standard responses and our custom Jira responses
+      const result = response.data && response.data.result !== undefined 
+        ? response.data.result 
+        : response.data;
+      return result;
+    })
+    .map((data: any) => ({
       content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
     }))
     .match(
-      (data) => data,
-      (error) => {
+      (data: any) => data,
+      (error: any) => {
         throw new Error(error);
       },
     ),

@@ -44,25 +44,25 @@ export const UpdateResultSchema = z.object({
 
 export const getResults = pipe(
   apply(client.results.getResults.bind(client.results)),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 export const getResult = pipe(
   client.results.getResult.bind(client.results),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 export const createResult = pipe(
   client.results.createResult.bind(client.results),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 export const createResultBulk = pipe(
   client.results.createResultBulk.bind(client.results),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 export const updateResult = pipe(
   client.results.updateResult.bind(client.results),
-  toResult,
+  (promise: any) => toResult(promise),
 );

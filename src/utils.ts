@@ -20,7 +20,7 @@ export const formatApiError = (error: unknown) => {
   return apiError.response?.data?.message || apiError.message;
 };
 
-export const toResult = (promise: Promise<AxiosResponse>) =>
+export const toResult = <T = any>(promise: Promise<AxiosResponse<T>>) =>
   ResultAsync.fromPromise(promise, formatApiError);
 
 export const client = (({ QASE_API_TOKEN }) => {

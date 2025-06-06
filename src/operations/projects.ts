@@ -22,15 +22,15 @@ export const CreateProjectSchema = z.object({
 
 export const listProjects = pipe(
   client.projects.getProjects.bind(client.projects),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 export const getProject = pipe(
   client.projects.getProject.bind(client.projects),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 export const createProject = pipe(
   client.projects.createProject.bind(client.projects),
-  toResult,
+  (promise: any) => toResult(promise),
 );

@@ -30,17 +30,20 @@ export const UpdatePlanSchema = z.object({
 
 export const getPlans = pipe(
   client.plans.getPlans.bind(client.plans),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
-export const getPlan = pipe(client.plans.getPlan.bind(client.plans), toResult);
+export const getPlan = pipe(
+  client.plans.getPlan.bind(client.plans), 
+  (promise: any) => toResult(promise)
+);
 
 export const createPlan = pipe(
   client.plans.createPlan.bind(client.plans),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 export const updatePlan = pipe(
   client.plans.updatePlan.bind(client.plans),
-  toResult,
+  (promise: any) => toResult(promise),
 );

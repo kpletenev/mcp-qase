@@ -33,20 +33,20 @@ export const UpdateSuiteSchema = z.object({
 
 export const getSuites = pipe(
   client.suites.getSuites.bind(client.suites),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 export const getSuite = pipe(
   client.suites.getSuite.bind(client.suites),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 export const createSuite = pipe(
   client.suites.createSuite.bind(client.suites),
-  toResult,
+  (promise: any) => toResult(promise),
 );
 
 export const updateSuite = pipe(
   client.suites.updateSuite.bind(client.suites),
-  toResult,
+  (promise: any) => toResult(promise),
 );
