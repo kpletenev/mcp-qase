@@ -92,6 +92,14 @@ import {
   linkTestCaseToJira,
   getTestCasesLinkedToJira,
 } from './operations/jira-links.js';
+import {
+  GetFailedResultsSchema,
+  GetFailedResultsDetailedSchema,
+  AnalyzeRunFailuresSchema,
+  getFailedResults,
+  getFailedResultsDetailed,
+  analyzeRunFailures,
+} from './operations/failed-results.js';
 import { match } from 'ts-pattern';
 import { errAsync } from 'neverthrow';
 
@@ -273,6 +281,24 @@ server.setRequestHandler(ListToolsRequestSchema, () => ({
       description: 'Get test cases linked to a specific Jira issue',
       inputSchema: zodToJsonSchema(GetTestCasesLinkedToJiraSchema),
     },
+    {
+      name: 'get_failed_results',
+      description:
+        'Get failed test results from a project with failure details including stacktraces and attachments',
+      inputSchema: zodToJsonSchema(GetFailedResultsSchema),
+    },
+    {
+      name: 'get_failed_results_detailed',
+      description:
+        'Get detailed failed test results with comprehensive test case information and failure analysis',
+      inputSchema: zodToJsonSchema(GetFailedResultsDetailedSchema),
+    },
+    {
+      name: 'analyze_run_failures',
+      description:
+        'Analyze failures in a specific test run with statistics and categorization',
+      inputSchema: zodToJsonSchema(AnalyzeRunFailuresSchema),
+    },
   ],
 }));
 
@@ -450,19 +476,40 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
       return updateSharedStep(code, hash, stepData);
     })
     .with({ name: 'link_test_case_to_jira' }, ({ arguments: args }) => {
-      const { code, caseId, jiraIssueKey, jiraType } = LinkTestCaseToJiraSchema.parse(args);
+      const { code, caseId, jiraIssueKey, jiraType } =
+        LinkTestCaseToJiraSchema.parse(args);
       return linkTestCaseToJira(code, caseId, jiraIssueKey, jiraType);
     })
     .with({ name: 'get_test_cases_linked_to_jira' }, ({ arguments: args }) => {
-      const { code, jiraIssueKey, jiraType, limit, offset } = GetTestCasesLinkedToJiraSchema.parse(args);
-      return getTestCasesLinkedToJira(code, jiraIssueKey, jiraType, limit, offset);
+      const { code, jiraIssueKey, jiraType, limit, offset } =
+        GetTestCasesLinkedToJiraSchema.parse(args);
+      return getTestCasesLinkedToJira(
+        code,
+        jiraIssueKey,
+        jiraType,
+        limit,
+        offset,
+      );
+    })
+    .with({ name: 'get_failed_results' }, ({ arguments: args }) => {
+      const parsedArgs = GetFailedResultsSchema.parse(args);
+      return getFailedResults(parsedArgs);
+    })
+    .with({ name: 'get_failed_results_detailed' }, ({ arguments: args }) => {
+      const parsedArgs = GetFailedResultsDetailedSchema.parse(args);
+      return getFailedResultsDetailed(parsedArgs);
+    })
+    .with({ name: 'analyze_run_failures' }, ({ arguments: args }) => {
+      const parsedArgs = AnalyzeRunFailuresSchema.parse(args);
+      return analyzeRunFailures(parsedArgs);
     })
     .otherwise(() => errAsync('Unknown tool'))
     .map((response: any) => {
       // Handle both standard responses and our custom Jira responses
-      const result = response.data && response.data.result !== undefined 
-        ? response.data.result 
-        : response.data;
+      const result =
+        response.data && response.data.result !== undefined
+          ? response.data.result
+          : response.data;
       return result;
     })
     .map((data: any) => ({
