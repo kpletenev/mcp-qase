@@ -28,6 +28,6 @@ export const getRuns = pipe(
 );
 
 export const getRun = pipe(
-  client.runs.getRun.bind(client.runs), 
-  (promise: any) => toResult(promise)
+  client.runs.getRun.bind(client.runs),
+  (promise: any) => toResult(promise),
 );

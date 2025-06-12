@@ -39,6 +39,8 @@ import {
   createResultBulk,
   UpdateResultSchema,
   updateResult,
+  GetResultsByStatusSchema,
+  getResultsByStatus,
 } from './operations/results.js';
 import {
   getCases,
@@ -92,6 +94,22 @@ import {
   linkTestCaseToJira,
   getTestCasesLinkedToJira,
 } from './operations/jira-links.js';
+import {
+  GetDefectsSchema,
+  GetDefectSchema,
+  CreateDefectSchema,
+  UpdateDefectSchema,
+  DeleteDefectSchema,
+  ResolveDefectSchema,
+  UpdateDefectStatusSchema,
+  getDefects,
+  getDefect,
+  createDefect,
+  updateDefect,
+  deleteDefect,
+  resolveDefect,
+  updateDefectStatus,
+} from './operations/defects.js';
 import { match } from 'ts-pattern';
 import { errAsync } from 'neverthrow';
 
@@ -172,6 +190,11 @@ server.setRequestHandler(ListToolsRequestSchema, () => ({
       name: 'update_result',
       description: 'Update an existing test run result',
       inputSchema: zodToJsonSchema(UpdateResultSchema),
+    },
+    {
+      name: 'get_results_by_status',
+      description: 'Get test results filtered by status (failed, passed, skipped, blocked, invalid) for a specific test run',
+      inputSchema: zodToJsonSchema(GetResultsByStatusSchema),
     },
     {
       name: 'get_cases',
@@ -358,6 +381,11 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
       const { code, id, hash, result } = UpdateResultSchema.parse(args);
       return updateResult(code, id, hash, result);
     })
+    .with({ name: 'get_results_by_status' }, ({ arguments: args }) => {
+      const { code, runId, status, unique, limit, offset, from, to } =
+        GetResultsByStatusSchema.parse(args);
+      return getResultsByStatus(code, runId, status, unique, limit, offset, from, to);
+    })
     .with({ name: 'get_cases' }, ({ arguments: args }) => {
       const {
         code,
@@ -485,12 +513,20 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
       return updateSharedStep(code, hash, stepData);
     })
     .with({ name: 'link_test_case_to_jira' }, ({ arguments: args }) => {
-      const { code, caseId, jiraIssueKey, jiraType } = LinkTestCaseToJiraSchema.parse(args);
+      const { code, caseId, jiraIssueKey, jiraType } =
+        LinkTestCaseToJiraSchema.parse(args);
       return linkTestCaseToJira(code, caseId, jiraIssueKey, jiraType);
     })
     .with({ name: 'get_test_cases_linked_to_jira' }, ({ arguments: args }) => {
-      const { code, jiraIssueKey, jiraType, limit, offset } = GetTestCasesLinkedToJiraSchema.parse(args);
-      return getTestCasesLinkedToJira(code, jiraIssueKey, jiraType, limit, offset);
+      const { code, jiraIssueKey, jiraType, limit, offset } =
+        GetTestCasesLinkedToJiraSchema.parse(args);
+      return getTestCasesLinkedToJira(
+        code,
+        jiraIssueKey,
+        jiraType,
+        limit,
+        offset,
+      );
     })
     .with({ name: 'get_defects' }, ({ arguments: args }) => {
       const { code, status, limit, offset } = GetDefectsSchema.parse(args);
@@ -523,9 +559,10 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
     .otherwise(() => errAsync('Unknown tool'))
     .map((response: any) => {
       // Handle both standard responses and our custom Jira responses
-      const result = response.data && response.data.result !== undefined
-        ? response.data.result
-        : response.data;
+      const result =
+        response.data && response.data.result !== undefined
+          ? response.data.result
+          : response.data;
       return result;
     })
     .map((data: any) => ({

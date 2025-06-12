@@ -147,8 +147,8 @@ export const getCases = pipe(
 );
 
 export const getCase = pipe(
-  client.cases.getCase.bind(client.cases), 
-  (promise: any) => toResult(promise)
+  client.cases.getCase.bind(client.cases),
+  (promise: any) => toResult(promise),
 );
 
 export const createCase = pipe(

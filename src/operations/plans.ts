@@ -34,8 +34,8 @@ export const getPlans = pipe(
 );
 
 export const getPlan = pipe(
-  client.plans.getPlan.bind(client.plans), 
-  (promise: any) => toResult(promise)
+  client.plans.getPlan.bind(client.plans),
+  (promise: any) => toResult(promise),
 );
 
 export const createPlan = pipe(
