@@ -42,6 +42,15 @@ export const UpdateResultSchema = z.object({
   result: z.record(z.any()).transform((v) => v as ResultUpdate),
 });
 
+export const GetFailedResultsSchema = z.object({
+  code: z.string(),
+  runId: z.number(),
+  limit: z.string().optional(),
+  offset: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+});
+
 export const getResults = pipe(
   apply(client.results.getResults.bind(client.results)),
   (promise: any) => toResult(promise),
@@ -66,3 +75,31 @@ export const updateResult = pipe(
   client.results.updateResult.bind(client.results),
   (promise: any) => toResult(promise),
 );
+
+export const getFailedResults = (
+  code: string,
+  runId: number,
+  limit?: string,
+  offset?: string,
+  from?: string,
+  to?: string,
+) => {
+  // Call the API with individual parameters
+  // getResults(code, status, run, caseId, member, api, fromEndTime, toEndTime, limit, offset, options)
+  return pipe(
+    apply(client.results.getResults.bind(client.results)),
+    (promise: any) => toResult(promise),
+  )([
+    code,          // code
+    'failed',      // status
+    runId.toString(),  // run
+    undefined,     // caseId
+    undefined,     // member
+    undefined,     // api
+    from,          // fromEndTime
+    to,            // toEndTime
+    limit ? parseInt(limit, 10) : undefined,         // limit
+    offset ? parseInt(offset, 10) : undefined,        // offset
+    undefined      // options
+  ]);
+};

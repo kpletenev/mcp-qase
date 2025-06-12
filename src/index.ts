@@ -39,6 +39,8 @@ import {
   createResultBulk,
   UpdateResultSchema,
   updateResult,
+  GetFailedResultsSchema,
+  getFailedResults,
 } from './operations/results.js';
 import {
   getCases,
@@ -172,6 +174,11 @@ server.setRequestHandler(ListToolsRequestSchema, () => ({
       name: 'update_result',
       description: 'Update an existing test run result',
       inputSchema: zodToJsonSchema(UpdateResultSchema),
+    },
+    {
+      name: 'get_failed_results',
+      description: 'Get all failed test results for a specific test run',
+      inputSchema: zodToJsonSchema(GetFailedResultsSchema),
     },
     {
       name: 'get_cases',
@@ -358,6 +365,11 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
       const { code, id, hash, result } = UpdateResultSchema.parse(args);
       return updateResult(code, id, hash, result);
     })
+    .with({ name: 'get_failed_results' }, ({ arguments: args }) => {
+      const { code, runId, limit, offset, from, to } =
+        GetFailedResultsSchema.parse(args);
+      return getFailedResults(code, runId, limit, offset, from, to);
+    })
     .with({ name: 'get_cases' }, ({ arguments: args }) => {
       const {
         code,
@@ -485,12 +497,20 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
       return updateSharedStep(code, hash, stepData);
     })
     .with({ name: 'link_test_case_to_jira' }, ({ arguments: args }) => {
-      const { code, caseId, jiraIssueKey, jiraType } = LinkTestCaseToJiraSchema.parse(args);
+      const { code, caseId, jiraIssueKey, jiraType } =
+        LinkTestCaseToJiraSchema.parse(args);
       return linkTestCaseToJira(code, caseId, jiraIssueKey, jiraType);
     })
     .with({ name: 'get_test_cases_linked_to_jira' }, ({ arguments: args }) => {
-      const { code, jiraIssueKey, jiraType, limit, offset } = GetTestCasesLinkedToJiraSchema.parse(args);
-      return getTestCasesLinkedToJira(code, jiraIssueKey, jiraType, limit, offset);
+      const { code, jiraIssueKey, jiraType, limit, offset } =
+        GetTestCasesLinkedToJiraSchema.parse(args);
+      return getTestCasesLinkedToJira(
+        code,
+        jiraIssueKey,
+        jiraType,
+        limit,
+        offset,
+      );
     })
     .with({ name: 'get_defects' }, ({ arguments: args }) => {
       const { code, status, limit, offset } = GetDefectsSchema.parse(args);
@@ -523,9 +543,10 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
     .otherwise(() => errAsync('Unknown tool'))
     .map((response: any) => {
       // Handle both standard responses and our custom Jira responses
-      const result = response.data && response.data.result !== undefined
-        ? response.data.result
-        : response.data;
+      const result =
+        response.data && response.data.result !== undefined
+          ? response.data.result
+          : response.data;
       return result;
     })
     .map((data: any) => ({
