@@ -94,6 +94,22 @@ import {
   linkTestCaseToJira,
   getTestCasesLinkedToJira,
 } from './operations/jira-links.js';
+import {
+  GetDefectsSchema,
+  GetDefectSchema,
+  CreateDefectSchema,
+  UpdateDefectSchema,
+  DeleteDefectSchema,
+  ResolveDefectSchema,
+  UpdateDefectStatusSchema,
+  getDefects,
+  getDefect,
+  createDefect,
+  updateDefect,
+  deleteDefect,
+  resolveDefect,
+  updateDefectStatus,
+} from './operations/defects.js';
 import { match } from 'ts-pattern';
 import { errAsync } from 'neverthrow';
 
