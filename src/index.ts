@@ -273,6 +273,41 @@ server.setRequestHandler(ListToolsRequestSchema, () => ({
       description: 'Get test cases linked to a specific Jira issue',
       inputSchema: zodToJsonSchema(GetTestCasesLinkedToJiraSchema),
     },
+    {
+      name: 'get_defects',
+      description: 'Get all defects in a project',
+      inputSchema: zodToJsonSchema(GetDefectsSchema),
+    },
+    {
+      name: 'get_defect',
+      description: 'Get a specific defect by ID',
+      inputSchema: zodToJsonSchema(GetDefectSchema),
+    },
+    {
+      name: 'create_defect',
+      description: 'Create a new defect',
+      inputSchema: zodToJsonSchema(CreateDefectSchema),
+    },
+    {
+      name: 'update_defect',
+      description: 'Update an existing defect',
+      inputSchema: zodToJsonSchema(UpdateDefectSchema),
+    },
+    {
+      name: 'delete_defect',
+      description: 'Delete a defect',
+      inputSchema: zodToJsonSchema(DeleteDefectSchema),
+    },
+    {
+      name: 'resolve_defect',
+      description: 'Resolve a specific defect',
+      inputSchema: zodToJsonSchema(ResolveDefectSchema),
+    },
+    {
+      name: 'update_defect_status',
+      description: 'Update the status of a defect',
+      inputSchema: zodToJsonSchema(UpdateDefectStatusSchema),
+    },
   ],
 }));
 
@@ -457,11 +492,39 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
       const { code, jiraIssueKey, jiraType, limit, offset } = GetTestCasesLinkedToJiraSchema.parse(args);
       return getTestCasesLinkedToJira(code, jiraIssueKey, jiraType, limit, offset);
     })
+    .with({ name: 'get_defects' }, ({ arguments: args }) => {
+      const { code, status, limit, offset } = GetDefectsSchema.parse(args);
+      return getDefects([code, status, limit, offset]);
+    })
+    .with({ name: 'get_defect' }, ({ arguments: args }) => {
+      const { code, id } = GetDefectSchema.parse(args);
+      return getDefect(code, id);
+    })
+    .with({ name: 'create_defect' }, ({ arguments: args }) => {
+      const { code, defect } = CreateDefectSchema.parse(args);
+      return createDefect(code, defect);
+    })
+    .with({ name: 'update_defect' }, ({ arguments: args }) => {
+      const { code, id, ...defectData } = UpdateDefectSchema.parse(args);
+      return updateDefect(code, id, defectData);
+    })
+    .with({ name: 'delete_defect' }, ({ arguments: args }) => {
+      const { code, id } = DeleteDefectSchema.parse(args);
+      return deleteDefect(code, id);
+    })
+    .with({ name: 'resolve_defect' }, ({ arguments: args }) => {
+      const { code, id } = ResolveDefectSchema.parse(args);
+      return resolveDefect(code, id);
+    })
+    .with({ name: 'update_defect_status' }, ({ arguments: args }) => {
+      const { code, id, status } = UpdateDefectStatusSchema.parse(args);
+      return updateDefectStatus(code, id, status);
+    })
     .otherwise(() => errAsync('Unknown tool'))
     .map((response: any) => {
       // Handle both standard responses and our custom Jira responses
-      const result = response.data && response.data.result !== undefined 
-        ? response.data.result 
+      const result = response.data && response.data.result !== undefined
+        ? response.data.result
         : response.data;
       return result;
     })
