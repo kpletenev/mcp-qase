@@ -39,8 +39,8 @@ import {
   createResultBulk,
   UpdateResultSchema,
   updateResult,
-  GetFailedResultsSchema,
-  getFailedResults,
+  GetResultsByStatusSchema,
+  getResultsByStatus,
 } from './operations/results.js';
 import {
   getCases,
@@ -176,9 +176,9 @@ server.setRequestHandler(ListToolsRequestSchema, () => ({
       inputSchema: zodToJsonSchema(UpdateResultSchema),
     },
     {
-      name: 'get_failed_results',
-      description: 'Get all failed test results for a specific test run',
-      inputSchema: zodToJsonSchema(GetFailedResultsSchema),
+      name: 'get_results_by_status',
+      description: 'Get test results filtered by status (failed, passed, skipped, blocked, invalid) for a specific test run',
+      inputSchema: zodToJsonSchema(GetResultsByStatusSchema),
     },
     {
       name: 'get_cases',
@@ -365,10 +365,10 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
       const { code, id, hash, result } = UpdateResultSchema.parse(args);
       return updateResult(code, id, hash, result);
     })
-    .with({ name: 'get_failed_results' }, ({ arguments: args }) => {
-      const { code, runId, limit, offset, from, to } =
-        GetFailedResultsSchema.parse(args);
-      return getFailedResults(code, runId, limit, offset, from, to);
+    .with({ name: 'get_results_by_status' }, ({ arguments: args }) => {
+      const { code, runId, status, unique, limit, offset, from, to } =
+        GetResultsByStatusSchema.parse(args);
+      return getResultsByStatus(code, runId, status, unique, limit, offset, from, to);
     })
     .with({ name: 'get_cases' }, ({ arguments: args }) => {
       const {
