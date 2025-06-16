@@ -43,7 +43,43 @@ export const GetCaseSchema = z.object({
 
 export const CreateCaseSchema = z.object({
   code: z.string(),
-  testCase: z.record(z.any()).transform((v) => v as TestCaseCreate),
+  testCase: z.object({
+    title: z.string(),
+    description: z.string().optional(),
+    preconditions: z.string().optional(),
+    postconditions: z.string().optional(),
+    severity: z.number().optional(),
+    priority: z.number().optional(),
+    type: z.number().optional(),
+    behavior: z.number().optional(),
+    automation: z.number().optional(),
+    status: z.number().optional(),
+    suite_id: z.number().optional(),
+    milestone_id: z.number().optional(),
+    layer: z.number().optional(),
+    is_flaky: z.boolean().optional().transform((val) => val === undefined ? undefined : val ? 1 : 0),
+    params: z.record(z.array(z.string())).optional(),
+    tags: z.array(z.string()).optional(),
+    steps: z
+      .array(
+        z.object({
+          action: z.string(),
+          expected_result: z.string().optional(),
+          data: z.string().optional(),
+          shared_step_hash: z.string().optional(),
+          shared_step_nested_hash: z.string().optional(),
+        }),
+      )
+      .optional(),
+    custom_fields: z
+      .array(
+        z.object({
+          id: z.number(),
+          value: z.string(),
+        }),
+      )
+      .optional(),
+  }),
 });
 
 export const UpdateCaseSchema = z.object({
@@ -63,14 +99,7 @@ export const UpdateCaseSchema = z.object({
   milestone_id: z.number().optional(),
   layer: z.number().optional(),
   is_flaky: z.boolean().optional(),
-  params: z
-    .array(
-      z.object({
-        title: z.string(),
-        value: z.string(),
-      }),
-    )
-    .optional(),
+  params: z.record(z.array(z.string())).optional(),
   tags: z.array(z.string()).optional(),
   steps: z
     .array(
@@ -161,15 +190,7 @@ const convertCaseData = (
 ) => ({
   ...data,
   is_flaky: data.is_flaky === undefined ? undefined : data.is_flaky ? 1 : 0,
-  params: data.params
-    ? data.params.reduce(
-        (acc, param) => ({
-          ...acc,
-          [param.title]: [param.value],
-        }),
-        {},
-      )
-    : undefined,
+  // params are already in the correct object format, no conversion needed
 });
 
 const mergeParameters = (
@@ -208,14 +229,8 @@ export const updateCase = (
       .andThen((existingCaseResult: any) => {
         const existingCase = existingCaseResult.data.result;
         
-        // Convert new params to the expected format
-        const newParams = data.params!.reduce(
-          (acc, param) => ({
-            ...acc,
-            [param.title]: [param.value],
-          }),
-          {} as Record<string, string[]>,
-        );
+        // New params are already in the correct object format: {"paramName": ["value1", "value2"]}
+        const newParams = data.params!;
         
         // Merge existing parameters with new ones
         const mergedParams = mergeParameters(existingCase?.params, newParams);
