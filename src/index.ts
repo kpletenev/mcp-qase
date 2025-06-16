@@ -102,6 +102,7 @@ import {
   DeleteDefectSchema,
   ResolveDefectSchema,
   UpdateDefectStatusSchema,
+  UpdateDefectWithFailedTestsSchema,
   getDefects,
   getDefect,
   createDefect,
@@ -109,6 +110,7 @@ import {
   deleteDefect,
   resolveDefect,
   updateDefectStatus,
+  updateDefectWithFailedTests,
 } from './operations/defects.js';
 import { match } from 'ts-pattern';
 import { errAsync } from 'neverthrow';
@@ -330,6 +332,11 @@ server.setRequestHandler(ListToolsRequestSchema, () => ({
       name: 'update_defect_status',
       description: 'Update the status of a defect',
       inputSchema: zodToJsonSchema(UpdateDefectStatusSchema),
+    },
+    {
+      name: 'update_defect_with_failed_tests',
+      description: 'Update a defect by linking it with failed test results from a specific test run',
+      inputSchema: zodToJsonSchema(UpdateDefectWithFailedTestsSchema),
     },
   ],
 }));
@@ -555,6 +562,10 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
     .with({ name: 'update_defect_status' }, ({ arguments: args }) => {
       const { code, id, status } = UpdateDefectStatusSchema.parse(args);
       return updateDefectStatus(code, id, status);
+    })
+    .with({ name: 'update_defect_with_failed_tests' }, ({ arguments: args }) => {
+      const { code, defectId, ...options } = UpdateDefectWithFailedTestsSchema.parse(args);
+      return updateDefectWithFailedTests(code, defectId, { code, defectId, ...options });
     })
     .otherwise(() => errAsync('Unknown tool'))
     .map((response: any) => {

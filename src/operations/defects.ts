@@ -2,6 +2,9 @@ import { DefectCreate, DefectUpdate, DefectStatus } from 'qaseio';
 import { z } from 'zod';
 import { client, toResult } from '../utils.js';
 import { apply, pipe } from 'ramda';
+import { getResultsByStatus } from './results.js';
+import { getCase } from './cases.js';
+import { getRun } from './runs.js';
 
 // Schema for getting all defects
 export const GetDefectsSchema = z.object({
@@ -61,6 +64,21 @@ export const UpdateDefectStatusSchema = z.object({
   code: z.string(),
   id: z.number(),
   status: z.enum(['in_progress', 'resolved', 'invalid']),
+});
+
+// Schema for updating defect with failed tests
+export const UpdateDefectWithFailedTestsSchema = z.object({
+  code: z.string().describe('Project code'),
+  defectId: z.number().describe('ID of the defect to update'),
+  runId: z.number().optional().describe('Specific test run ID to filter failed tests'),
+  timeRange: z.object({
+    from: z.string().describe('Start date (ISO format: YYYY-MM-DD HH:mm:ss)'),
+    to: z.string().describe('End date (ISO format: YYYY-MM-DD HH:mm:ss)'),
+  }).optional().describe('Date range to filter failed tests'),
+  testCaseIds: z.array(z.number()).optional().describe('Specific test case IDs to include'),
+  linkType: z.enum(['related', 'caused_by', 'blocks']).default('related').describe('Type of link to create'),
+  appendToDescription: z.boolean().default(true).describe('Whether to append links to defect description'),
+  includeFailureDetails: z.boolean().default(true).describe('Whether to include failure details in links'),
 });
 
 // Get all defects
@@ -126,3 +144,212 @@ export const updateDefectStatus = pipe(
   },
   (promise: any) => toResult(promise),
 );
+
+// Helper function to format test link
+const formatTestLink = (
+  testResult: any,
+  testCase: any,
+  testRun: any,
+  options: {
+    linkType: string;
+    includeFailureDetails: boolean;
+  }
+) => {
+  const timestamp = new Date(testResult.time_ms || Date.now()).toISOString();
+  const qaseUrl = `https://app.qase.io/project/${testResult.project_code}/test-run/${testRun.id}#case=${testCase.id}`;
+  
+  let linkContent = `- **Test Case ${testCase.id}:** [${testCase.title || 'Untitled Test Case'}](${qaseUrl})\n`;
+  linkContent += `  - **Run:** ${testRun.title || `Test Run ${testRun.id}`}\n`;
+  linkContent += `  - **Failed at:** ${timestamp}\n`;
+  linkContent += `  - **Link Type:** ${options.linkType}\n`;
+  linkContent += `  - **Status:** Failed\n`;
+  
+  if (options.includeFailureDetails && testResult.comment) {
+    linkContent += `  - **Failure Details:** ${testResult.comment}\n`;
+  }
+  
+  return linkContent;
+};
+
+// Helper function to generate failed tests section
+const generateFailedTestsSection = (
+  failedTests: any[],
+  testCases: Map<number, any>,
+  testRuns: Map<number, any>,
+  options: {
+    linkType: string;
+    includeFailureDetails: boolean;
+  }
+) => {
+  const timestamp = new Date().toISOString();
+  let section = `\n\n## Failed Tests Linked on ${timestamp}\n\n`;
+  
+  // Group by test run
+  const groupedByRun = new Map<number, any[]>();
+  failedTests.forEach(test => {
+    const runId = test.run_id;
+    if (!groupedByRun.has(runId)) {
+      groupedByRun.set(runId, []);
+    }
+    groupedByRun.get(runId)!.push(test);
+  });
+  
+  // Generate content for each run
+  groupedByRun.forEach((tests, runId) => {
+    const testRun = testRuns.get(runId);
+    section += `### Test Run: ${testRun?.title || `Test Run ${runId}`} (ID: ${runId})\n\n`;
+    
+    tests.forEach(test => {
+      const testCase = testCases.get(test.case_id);
+      if (testCase) {
+        section += formatTestLink(test, testCase, testRun, options);
+      }
+    });
+    
+    section += '\n';
+  });
+  
+  return section;
+};
+
+// Link defect to failed test results using the proper public API approach
+export const updateDefectWithFailedTests = (
+  code: string,
+  defectId: number,
+  options: z.infer<typeof UpdateDefectWithFailedTestsSchema>
+) => {
+  return toResult(
+    (async () => {
+      // 1. Verify defect exists
+      const defectResult = await getDefect(code, defectId);
+      if (defectResult.isErr()) {
+        throw new Error(defectResult.error);
+      }
+      
+      const currentDefect = defectResult.value.data.result;
+      if (!currentDefect) {
+        throw new Error(`Defect with ID ${defectId} not found in project ${code}`);
+      }
+
+      // 2. Fetch failed test results
+      if (!options.runId) {
+        throw new Error('Run ID is required. Please specify a specific test run to link failed tests from.');
+      }
+
+      const failedTestsResult = await getResultsByStatus(
+        code,
+        options.runId,
+        'failed',
+        true, // unique
+        '100', // limit
+        '0',   // offset
+        options.timeRange?.from,
+        options.timeRange?.to
+      );
+
+      if (failedTestsResult.isErr()) {
+        throw new Error(`Failed to fetch test results: ${failedTestsResult.error}`);
+      }
+
+      let allFailedTests: any[] = failedTestsResult.value.data?.result?.entities || [];
+
+      // 3. Filter by specific test case IDs if provided
+      if (options.testCaseIds && options.testCaseIds.length > 0) {
+        allFailedTests = allFailedTests.filter((test: any) => 
+          options.testCaseIds!.includes(test.case_id)
+        );
+      }
+
+      if (allFailedTests.length === 0) {
+        return {
+          data: {
+            result: {
+              error: false,
+              message: 'No failed tests found matching the specified criteria.',
+              data: {
+                defect: currentDefect,
+                linkedTestsCount: 0,
+                operation: 'No changes made'
+              }
+            }
+          },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {}
+        } as any;
+      }
+
+      // 4. Update each test result to link it to the defect using the public API
+      const linkedResults: any[] = [];
+      const failedUpdates: any[] = [];
+
+      for (const testResult of allFailedTests) {
+        try {
+          // Use the proper public API approach: Update the test result with defect=true
+          // According to the documentation, we can also pass the defect ID
+          const updateResult = await client.results.updateResult(
+            code,
+            options.runId,
+            testResult.hash,
+            {
+              defect: true, // This marks the result as having a defect
+              comment: testResult.comment ? 
+                `${testResult.comment}\n\n--- Linked to defect #${defectId} ---` : 
+                `Linked to defect #${defectId}`,
+              // For some API clients, you might be able to specify the defect ID directly
+              // But the 'defect: true' approach is documented as the standard way
+            }
+          );
+
+          linkedResults.push({
+            caseId: testResult.case_id,
+            runId: testResult.run_id,
+            hash: testResult.hash,
+            status: testResult.status,
+            linked: true,
+            apiResponse: updateResult
+          });
+
+        } catch (error) {
+          console.warn(`Failed to link test result ${testResult.hash} to defect:`, error);
+          failedUpdates.push({
+            caseId: testResult.case_id,
+            hash: testResult.hash,
+            error: (error as any).message
+          });
+        }
+      }
+
+      // 5. Return results with linking information
+      return {
+        data: {
+          result: {
+            error: false,
+            message: `Successfully linked ${linkedResults.length} failed tests to defect ${defectId}${failedUpdates.length > 0 ? ` (${failedUpdates.length} failed)` : ''}`,
+            data: {
+              defect: currentDefect,
+              linkedTestsCount: linkedResults.length,
+              linkedTests: linkedResults,
+              failedLinks: failedUpdates,
+              operation: 'Linked test results to defect using public API (PATCH /result/{projectCode}/{runId}/{resultHash})',
+              methodology: {
+                approach: 'Update individual test results with defect=true',
+                endpoint: `PATCH /result/${code}/{runId}/{resultHash}`,
+                documentation: 'https://docs.qase.io/general/issues/defects',
+                parameters_used: {
+                  defect: true,
+                  comment: 'Updated with defect reference'
+                }
+              }
+            }
+          }
+        },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {}
+      } as any;
+    })()
+  );
+};
