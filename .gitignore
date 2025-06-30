@@ -36,3 +36,34 @@ logs/
 
 # Zencoder
 .zencoder/
+
+logs
+dev-debug.log
+# Dependency directories
+.env
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# OS specific
+
+# Task files
+tasks.json
+tasks/
+
+.clinerules/
+.cursor/
+.github/instructions/
+.roo/
+.roomodes
+.taskmaster/
+.trae/
+.windsurf/
+AGENTS.md
+CLAUDE.md
+inspect-client.js
+tests/

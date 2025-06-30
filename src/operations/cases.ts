@@ -57,7 +57,10 @@ export const CreateCaseSchema = z.object({
     suite_id: z.number().optional(),
     milestone_id: z.number().optional(),
     layer: z.number().optional(),
-    is_flaky: z.boolean().optional().transform((val) => val === undefined ? undefined : val ? 1 : 0),
+    is_flaky: z
+      .boolean()
+      .optional()
+      .transform((val) => (val === undefined ? undefined : val ? 1 : 0)),
     params: z.record(z.array(z.string())).optional(),
     tags: z.array(z.string()).optional(),
     steps: z
@@ -201,15 +204,16 @@ const mergeParameters = (
   if (!newParams) {
     return existingParams;
   }
-  
+
   // If no existing params, return new params
   if (!existingParams) {
     return newParams;
   }
-  
+
   // Convert existing params to Record<string, string[]> format if needed
-  const normalizedExisting = typeof existingParams === 'object' ? existingParams : {};
-  
+  const normalizedExisting =
+    typeof existingParams === 'object' ? existingParams : {};
+
   // Merge existing and new parameters
   return {
     ...normalizedExisting,
@@ -225,30 +229,36 @@ export const updateCase = (
   // If params are provided in the update, we need to merge with existing params
   if (data.params) {
     // First, get the existing test case to retrieve current parameters
-    return toResult(client.cases.getCase(code, id) as any)
-      .andThen((existingCaseResult: any) => {
+    return toResult(client.cases.getCase(code, id) as any).andThen(
+      (existingCaseResult: any) => {
         const existingCase = existingCaseResult.data.result;
-        
+
         // New params are already in the correct object format: {"paramName": ["value1", "value2"]}
         const newParams = data.params!;
-        
+
         // Merge existing parameters with new ones
         const mergedParams = mergeParameters(existingCase?.params, newParams);
-        
+
         // Convert the data with merged parameters
         const convertedData = {
           ...data,
-          is_flaky: data.is_flaky === undefined ? undefined : data.is_flaky ? 1 : 0,
+          is_flaky:
+            data.is_flaky === undefined ? undefined : data.is_flaky ? 1 : 0,
           params: mergedParams,
         };
-        
+
         // Use type assertion to handle the axios type mismatch
         const updatePromise = client.cases.updateCase(code, id, convertedData);
         return toResult(updatePromise as any);
-      });
+      },
+    );
   } else {
     // If no params in update, use the original conversion (preserves existing params)
-    const updatePromise = client.cases.updateCase(code, id, convertCaseData(data));
+    const updatePromise = client.cases.updateCase(
+      code,
+      id,
+      convertCaseData(data),
+    );
     return toResult(updatePromise as any);
   }
 };

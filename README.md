@@ -4,6 +4,49 @@ MCP server implementation for Qase API
 
 This is a TypeScript-based MCP server that provides integration with the Qase test management platform. It implements core MCP concepts by providing tools for interacting with various Qase entities.
 
+## Installation
+
+You can use this package directly with npx:
+
+```bash
+npx -y qase-mcp-server --token YOUR_QASE_API_TOKEN
+```
+
+### Configuration Options
+
+You can configure the server in several ways:
+
+1. **Command line arguments**:
+   ```bash
+   npx -y qase-mcp-server --token YOUR_QASE_API_TOKEN --debug
+   ```
+
+2. **Environment variables**:
+   ```bash
+   export QASE_API_TOKEN=YOUR_QASE_API_TOKEN
+   npx -y qase-mcp-server
+   ```
+
+3. **Configuration file** (default: `~/.qase-mcp-server.json`):
+   ```json
+   {
+     "apiToken": "YOUR_QASE_API_TOKEN",
+     "debug": true
+   }
+   ```
+
+   You can specify a custom config file path:
+   ```bash
+   npx -y qase-mcp-server --config ./my-config.json
+   ```
+
+### Command Line Options
+
+- `--token, -t <token>`: Qase API token
+- `--config, -c <path>`: Path to config file
+- `--debug, -d`: Enable debug mode
+- `--help, -h`: Show help message
+
 ## Features
 
 ### Tools
@@ -74,7 +117,7 @@ For development with auto-rebuild:
 npm run watch
 ```
 
-## Installation
+## Integration with AI Assistants
 
 ### Claude Desktop
 
@@ -86,8 +129,9 @@ To use with Claude Desktop, add the server config:
 ```json
 {
   "mcpServers": {
-    "mcp-qase": {
-      "command": "/path/to/mcp-qase/build/index.js",
+    "qase": {
+      "command": "npx",
+      "args": ["-y", "qase-mcp-server"],
       "env": {
         "QASE_API_TOKEN": "<YOUR_TOKEN>"
       }
@@ -96,12 +140,32 @@ To use with Claude Desktop, add the server config:
 }
 ```
 
-### Cursor
+### Zencoder
 
-To use with Cursor, register the command as follows:
+To use with Zencoder, add the following to your Zencoder MCP configuration:
 
+```json
+{
+  "command": "npx",
+  "args": ["-y", "qase-mcp-server"],
+  "env": {
+    "QASE_API_TOKEN": "<YOUR_TOKEN>"
+  }
+}
 ```
-env QASE_API_TOKEN=<YOUR_TOKEN> /path/to/mcp-qase/build/index.js
+
+### Other MCP-Compatible AI Assistants
+
+For other AI assistants that support MCP, follow their documentation for adding custom MCP servers. The general configuration format is:
+
+```json
+{
+  "command": "npx",
+  "args": ["-y", "qase-mcp-server"],
+  "env": {
+    "QASE_API_TOKEN": "<YOUR_TOKEN>"
+  }
+}
 ```
 
 ## Debugging
@@ -109,5 +173,44 @@ env QASE_API_TOKEN=<YOUR_TOKEN> /path/to/mcp-qase/build/index.js
 Since MCP servers communicate over stdio, debugging can be challenging. We recommend using the [MCP Inspector](https://github.com/modelcontextprotocol/inspector):
 
 ```bash
-npx -y @modelcontextprotocol/inspector -e QASE_API_TOKEN=<YOUR_TOKEN> ./build/index.js
+# Using the npx package
+npx -y @modelcontextprotocol/inspector -e QASE_API_TOKEN=<YOUR_TOKEN> -- npx -y qase-mcp-server
+
+# Or with debug mode enabled
+npx -y @modelcontextprotocol/inspector -e QASE_API_TOKEN=<YOUR_TOKEN> -- npx -y qase-mcp-server --debug
 ```
+
+You can also enable debug mode directly when running the server:
+
+```bash
+QASE_API_TOKEN=<YOUR_TOKEN> npx -y qase-mcp-server --debug
+```
+
+## Security Considerations
+
+- Your Qase API token is sensitive information. Do not share it publicly.
+- When using configuration files, ensure they have appropriate file permissions.
+- The token is stored in memory during execution and can be passed via environment variables or command-line arguments.
+- If you're concerned about command-line visibility, prefer using environment variables or configuration files.
+
+## Troubleshooting
+
+### Common Issues
+
+1. **API Token Issues**
+   - Error: "API token is required"
+   - Solution: Ensure you've provided a valid Qase API token via `--token`, environment variable, or config file.
+
+2. **Permission Issues**
+   - Error: "Permission denied"
+   - Solution: Ensure the executable has proper permissions. The build process should set these automatically.
+
+3. **Node.js Version**
+   - Error: "Unexpected token" or syntax errors
+   - Solution: Ensure you're using Node.js version 18 or higher.
+
+4. **Connection Issues**
+   - Error: "Failed to connect to Qase API"
+   - Solution: Check your internet connection and verify that your API token is valid.
+
+For more help, run with the `--debug` flag to see additional diagnostic information.

@@ -1,12 +1,18 @@
 #!/usr/bin/env node
 
 /**
- * This is a template MCP server that implements a simple notes system.
- * It demonstrates core MCP concepts like resources and tools by allowing:
- * - Listing notes as resources
- * - Reading individual notes
- * - Creating new notes via a tool
- * - Summarizing all notes via a prompt
+ * MCP server implementation for Qase API
+ * This server provides integration with the Qase test management platform.
+ * It implements core MCP concepts by providing tools for interacting with various Qase entities:
+ * - Projects
+ * - Test Cases
+ * - Test Runs
+ * - Test Results
+ * - Test Plans
+ * - Test Suites
+ * - Shared Steps
+ * - Defects
+ * - Jira Integration
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -112,15 +118,27 @@ import {
 } from './operations/defects.js';
 import { match } from 'ts-pattern';
 import { errAsync } from 'neverthrow';
+import { getConfig } from './config.js';
+
+// Get configuration from environment variables, command line args, and config file
+const config = getConfig();
+
+// Set API token for Qase API
+process.env.QASE_API_TOKEN = config.apiToken;
+
+// Enable debug logging if requested
+if (config.debug) {
+  console.log('Debug mode enabled');
+  console.log('Using Qase API token:', config.apiToken.substring(0, 4) + '...');
+}
 
 /**
- * Create an MCP server with capabilities for resources (to list/read notes),
- * tools (to create new notes), and prompts (to summarize notes).
+ * Create an MCP server with capabilities for resources, tools, and prompts
  */
 const server = new Server(
   {
-    name: 'mcp-qase',
-    version: '0.1.0',
+    name: 'qase-mcp-server',
+    version: '1.0.0',
   },
   {
     capabilities: {
@@ -193,7 +211,8 @@ server.setRequestHandler(ListToolsRequestSchema, () => ({
     },
     {
       name: 'get_results_by_status',
-      description: 'Get test results filtered by status (failed, passed, skipped, blocked, invalid) for a specific test run',
+      description:
+        'Get test results filtered by status (failed, passed, skipped, blocked, invalid) for a specific test run',
       inputSchema: zodToJsonSchema(GetResultsByStatusSchema),
     },
     {
@@ -384,7 +403,16 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
     .with({ name: 'get_results_by_status' }, ({ arguments: args }) => {
       const { code, runId, status, unique, limit, offset, from, to } =
         GetResultsByStatusSchema.parse(args);
-      return getResultsByStatus(code, runId, status, unique, limit, offset, from, to);
+      return getResultsByStatus(
+        code,
+        runId,
+        status,
+        unique,
+        limit,
+        offset,
+        from,
+        to,
+      );
     })
     .with({ name: 'get_cases' }, ({ arguments: args }) => {
       const {

@@ -20,15 +20,17 @@ export const GetDefectSchema = z.object({
 // Schema for creating a new defect
 export const CreateDefectSchema = z.object({
   code: z.string(),
-  defect: z.object({
-    title: z.string(),
-    actual_result: z.string(),
-    severity: z.number(),
-    milestone_id: z.number().nullable().optional(),
-    attachments: z.array(z.string()).optional(),
-    custom_field: z.record(z.string()).optional(),
-    tags: z.array(z.string()).optional(),
-  }).transform((v) => v as DefectCreate),
+  defect: z
+    .object({
+      title: z.string(),
+      actual_result: z.string(),
+      severity: z.number(),
+      milestone_id: z.number().nullable().optional(),
+      attachments: z.array(z.string()).optional(),
+      custom_field: z.record(z.string()).optional(),
+      tags: z.array(z.string()).optional(),
+    })
+    .transform((v) => v as DefectCreate),
 });
 
 // Schema for updating a defect
