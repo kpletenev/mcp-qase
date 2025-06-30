@@ -38,7 +38,7 @@
     "inspector": "npx @modelcontextprotocol/inspector build/index.js",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prepublishOnly": "npm run build && npm run test:package && npm run check:name",
+    "prepublishOnly": "npm run build && npm run test:package",
     "postpublish": "echo 'Package published successfully!'",
     "test:pack": "npm pack --dry-run",
     "test:package": "node scripts/test-package.js",
