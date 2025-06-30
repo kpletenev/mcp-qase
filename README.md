@@ -140,9 +140,9 @@ To use with Claude Desktop, add the server config:
 }
 ```
 
-### Cursor
+### Zencoder
 
-To use with Cursor, add the following to your Cursor MCP configuration:
+To use with Zencoder, add the following to your Zencoder MCP configuration:
 
 ```json
 {
