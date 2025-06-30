@@ -1,26 +1,48 @@
 {
-  "name": "mcp-qase",
-  "version": "0.1.0",
-  "description": "MCP server implementation for Qase API",
-  "private": true,
+  "name": "qase-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server implementation for Qase API - Run Qase TMS operations from AI assistants",
+  "private": false,
   "type": "module",
   "bin": {
-    "mcp-qase": "./build/index.js"
+    "qase-mcp-server": "./build/index.js"
   },
   "files": [
     "build"
   ],
+  "keywords": [
+    "mcp",
+    "qase",
+    "test-management",
+    "tms",
+    "ai",
+    "claude",
+    "cursor",
+    "model-context-protocol"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zencoder/mcp-qase"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
     "prepare": "npm run build",
     "watch": "tsc --watch",
     "inspector": "npx @modelcontextprotocol/inspector build/index.js",
     "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix"
+    "lint:fix": "eslint . --ext .ts --fix",
+    "prepublishOnly": "npm run lint && npm run build && npm run test:package && npm run check:name",
+    "postpublish": "echo 'Package published successfully!'",
+    "test:pack": "npm pack --dry-run",
+    "test:package": "node scripts/test-package.js",
+    "check:name": "node scripts/check-name-availability.js",
+    "check:security": "npm audit"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "0.6.0",
-    "@types/ramda": "^0.30.2",
     "neverthrow": "^8.2.0",
     "qaseio": "^2.4.1",
     "ramda": "^0.30.1",
@@ -30,6 +52,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
+    "@types/ramda": "^0.30.2",
     "@typescript-eslint/eslint-plugin": "^8.26.1",
     "eslint": "^9.22.0",
     "eslint-config-prettier": "^10.1.1",
