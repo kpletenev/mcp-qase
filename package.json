@@ -5,7 +5,7 @@
   "private": false,
   "type": "module",
   "bin": {
-    "qase-mcp-server": "./build/index.js"
+    "qase-mcp-server": "build/index.js"
   },
   "files": [
     "build"
@@ -22,7 +22,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/kpletenev/mcp-qase"
+    "url": "git+https://github.com/kpletenev/mcp-qase.git"
   },
   "homepage": "https://github.com/kpletenev/mcp-qase#readme",
   "bugs": {
