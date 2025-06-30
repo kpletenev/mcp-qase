@@ -1,7 +1,7 @@
 {
   "name": "qase-mcp-server",
-  "version": "1.0.0",
-  "description": "MCP server implementation for Qase API - Run Qase TMS operations from AI assistants",
+  "version": "1.0.1",
+  "description": "Model Context Protocol server for Qase TMS - Enables AI assistants to manage test cases, runs, and defects in Qase",
   "private": false,
   "type": "module",
   "bin": {
