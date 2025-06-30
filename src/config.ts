@@ -24,7 +24,7 @@ function parseArgs(): Partial<Config> {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     if (arg === '--token' || arg === '-t') {
       config.apiToken = args[++i];
     } else if (arg === '--config' || arg === '-c') {
@@ -50,9 +50,11 @@ function loadConfigFile(configPath: string): Partial<Config> {
       return JSON.parse(fileContent);
     }
   } catch (error: any) {
-    console.error(`Error loading config file: ${error.message || 'Unknown error'}`);
+    console.error(
+      `Error loading config file: ${error.message || 'Unknown error'}`,
+    );
   }
-  
+
   return {};
 }
 
@@ -87,23 +89,23 @@ Environment Variables:
 export function getConfig(): Config {
   // Parse command line arguments
   const argsConfig = parseArgs();
-  
+
   // Load config from file if specified
   const configPath = argsConfig.configPath || DEFAULT_CONFIG_PATH;
   const fileConfig = loadConfigFile(configPath);
-  
+
   // Get config from environment variables
   const envConfig: Partial<Config> = {
     apiToken: process.env.QASE_API_TOKEN,
   };
-  
+
   // Merge configs with priority: args > env > file
   const mergedConfig = {
     ...fileConfig,
     ...envConfig,
     ...argsConfig,
   };
-  
+
   try {
     // Validate the config
     return ConfigSchema.parse(mergedConfig);
@@ -116,8 +118,10 @@ export function getConfig(): Config {
     } else {
       console.error(error.message || 'Unknown validation error');
     }
-    
-    console.error('\nPlease provide a valid API token via --token option or QASE_API_TOKEN environment variable.');
+
+    console.error(
+      '\nPlease provide a valid API token via --token option or QASE_API_TOKEN environment variable.',
+    );
     console.error('Run with --help for more information.');
     process.exit(1);
   }
@@ -128,7 +132,7 @@ export function getConfig(): Config {
  */
 export function saveConfig(config: Partial<Config>, configPath?: string): void {
   const filePath = configPath || DEFAULT_CONFIG_PATH;
-  
+
   try {
     // Read existing config if it exists
     let existingConfig = {};
@@ -136,13 +140,13 @@ export function saveConfig(config: Partial<Config>, configPath?: string): void {
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       existingConfig = JSON.parse(fileContent);
     }
-    
+
     // Merge with new config
     const newConfig = { ...existingConfig, ...config };
-    
+
     // Write to file
     fs.writeFileSync(filePath, JSON.stringify(newConfig, null, 2));
-    
+
     if (config.debug) {
       console.log(`Configuration saved to ${filePath}`);
     }

@@ -211,7 +211,8 @@ server.setRequestHandler(ListToolsRequestSchema, () => ({
     },
     {
       name: 'get_results_by_status',
-      description: 'Get test results filtered by status (failed, passed, skipped, blocked, invalid) for a specific test run',
+      description:
+        'Get test results filtered by status (failed, passed, skipped, blocked, invalid) for a specific test run',
       inputSchema: zodToJsonSchema(GetResultsByStatusSchema),
     },
     {
@@ -402,7 +403,16 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
     .with({ name: 'get_results_by_status' }, ({ arguments: args }) => {
       const { code, runId, status, unique, limit, offset, from, to } =
         GetResultsByStatusSchema.parse(args);
-      return getResultsByStatus(code, runId, status, unique, limit, offset, from, to);
+      return getResultsByStatus(
+        code,
+        runId,
+        status,
+        unique,
+        limit,
+        offset,
+        from,
+        to,
+      );
     })
     .with({ name: 'get_cases' }, ({ arguments: args }) => {
       const {
