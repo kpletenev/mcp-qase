@@ -116,6 +116,10 @@ import {
   resolveDefect,
   updateDefectStatus,
 } from './operations/defects.js';
+import {
+  QQLSearchSchema,
+  qqlSearch,
+} from './operations/search.js';
 import { match } from 'ts-pattern';
 import { errAsync } from 'neverthrow';
 import { getConfig } from './config.js';
@@ -350,6 +354,11 @@ server.setRequestHandler(ListToolsRequestSchema, () => ({
       description: 'Update the status of a defect',
       inputSchema: zodToJsonSchema(UpdateDefectStatusSchema),
     },
+    {
+      name: 'qql_search',
+      description: 'Search entities by Qase Query Language (QQL). Allows advanced filtering across test cases, defects, test runs, results, plans, and requirements using QQL expressions.',
+      inputSchema: zodToJsonSchema(QQLSearchSchema),
+    },
   ],
 }));
 
@@ -583,6 +592,10 @@ server.setRequestHandler(CallToolRequestSchema, (request) =>
     .with({ name: 'update_defect_status' }, ({ arguments: args }) => {
       const { code, id, status } = UpdateDefectStatusSchema.parse(args);
       return updateDefectStatus(code, id, status);
+    })
+    .with({ name: 'qql_search' }, ({ arguments: args }) => {
+      const { query, limit, offset } = QQLSearchSchema.parse(args);
+      return qqlSearch(query, limit, offset);
     })
     .otherwise(() => errAsync('Unknown tool'))
     .map((response: any) => {
