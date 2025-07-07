@@ -100,6 +100,66 @@ The server provides tools for interacting with the Qase API, allowing you to man
 - `link_test_case_to_jira` - Link a test case to a Jira issue
 - `get_test_cases_linked_to_jira` - Get test cases linked to a specific Jira issue
 
+#### Defects
+- `get_defects` - Get all defects in a project
+- `get_defect` - Get a specific defect by ID
+- `create_defect` - Create a new defect
+- `update_defect` - Update an existing defect
+- `delete_defect` - Delete a defect
+- `resolve_defect` - Resolve a specific defect
+- `update_defect_status` - Update the status of a defect
+
+#### QQL Search
+- `qql_search` - Search entities using Qase Query Language (QQL)
+
+The QQL search tool allows you to perform advanced searches across various Qase entities using QQL expressions. This provides powerful filtering capabilities across test cases, defects, test runs, results, plans, and requirements.
+
+**Parameters:**
+- `query` (required): QQL expression string (1-1000 characters)
+- `limit` (optional): Number of results to return (1-100, default: 10)
+- `offset` (optional): Number of results to skip for pagination (0-100000, default: 0)
+
+**Example QQL Queries:**
+
+Test Cases:
+```qql
+entity = "case" and project = "DEMO" and title ~ "auth" order by id desc
+entity = "case" and isFlaky = false and automation = "To be automated"
+entity = "case" and status = "Actual" and created >= now("-14d")
+entity = "case" and author = currentUser() and updated >= startOfWeek()
+```
+
+Defects:
+```qql
+entity = "defect" and status = "open"
+entity = "defect" and severity = "blocker" and project = "DEMO"
+entity = "defect" and created >= startOfWeek() and status != "resolved"
+entity = "defect" and isResolved = false and milestone ~ "Sprint"
+```
+
+Test Results:
+```qql
+entity = "result" and status = "failed" and timeSpent > 5000 and milestone ~ "Sprint 12"
+entity = "result" and status = "passed" and created >= now("-7d")
+entity = "result" and status in ["failed", "blocked"] and created >= startOfDay()
+```
+
+Test Runs:
+```qql
+entity = "run" and status = "in progress" and project = "DEMO"
+entity = "run" and author = currentUser() and created >= now("-30d")
+entity = "run" and title ~ "regression" and status = "passed"
+```
+
+**QQL Features:**
+- **Entities**: case, defect, result, run, plan, requirement
+- **Operators**: `=`, `!=`, `~`, `>`, `<`, `>=`, `<=`, `in`, `not in`, `is empty`, `is not empty`
+- **Logic**: `and`, `or`, `not`, parentheses for grouping
+- **Functions**: `currentUser()`, `activeUsers()`, `now()`, `startOfDay()`, `startOfWeek()`, `startOfMonth()`, etc.
+- **Sorting**: `ORDER BY field ASC/DESC`
+
+For complete QQL reference, see the [Qase QQL documentation](https://help.qase.io/en/articles/5563727-queries).
+
 ## Development
 
 Install dependencies:
